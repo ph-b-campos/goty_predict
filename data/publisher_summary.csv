@@ -1,0 +1,52 @@
+publisher,publisher_tier,publisher_region,titles,total_sales_m,avg_metacritic,goty_wins,avg_revenue_m,pct_sequels
+Sega,AAA,Japan,1560,59199.69,75.78,16,949.42,0.42
+Nintendo,AAA,Japan,1466,58392.69,75.31,13,1001.22,0.42
+Sony Interactive,AAA,Japan,1552,57556.85,75.28,8,947.03,0.41
+Capcom,AAA,Japan,1456,56705.84,75.78,7,985.95,0.41
+FromSoftware,AAA,Japan,1520,56663.09,75.51,13,895.26,0.41
+Square Enix,AAA,Japan,1468,56513.43,75.35,17,963.02,0.4
+Bandai Namco,AAA,Japan,1536,54857.96,75.69,13,902.97,0.44
+Konami,AAA,Japan,1484,53090.5,75.51,13,902.49,0.41
+Insomniac Games,AAA,USA,1485,50060.11,75.54,15,782.51,0.41
+id Software,AAA,USA,1504,49838.4,75.02,14,796.04,0.4
+Take-Two Interactive,AAA,USA,1501,49272.29,75.87,9,797.7,0.4
+Epic Games,AAA,USA,1491,49159.93,75.75,10,815.46,0.42
+Activision Blizzard,AAA,USA,1435,49006.53,75.44,14,824.6,0.42
+Bethesda Softworks,AAA,USA,1467,48668.89,75.48,8,810.7,0.44
+2K Games,AAA,USA,1467,48246.74,75.9,7,838.95,0.41
+Warner Bros. Games,AAA,USA,1488,48140.65,75.54,17,764.68,0.4
+Electronic Arts,AAA,USA,1478,46991.31,75.49,15,747.13,0.43
+Valve,AAA,USA,1422,46603.96,75.64,18,846.12,0.39
+CD Projekt,AAA,Poland,1417,46506.04,75.99,8,819.63,0.4
+Ubisoft,AAA,France,1440,45677.74,75.54,5,803.36,0.41
+Naughty Dog,AAA,USA,1468,45628.52,75.46,15,774.38,0.41
+Bungie,AAA,USA,1439,45200.78,75.64,15,751.98,0.42
+Microsoft Studios,AAA,USA,1411,44643.65,75.67,20,781.4,0.41
+Rockstar Games,AAA,USA,1419,44003.26,75.74,10,781.74,0.41
+Obsidian Entertainment,AA,USA,744,6368.91,68.46,2,187.12,0.42
+Paradox Interactive,AA,Sweden,718,6298.5,67.94,0,187.15,0.43
+Larian Studios,AA,Belgium,778,6114.21,68.88,1,170.67,0.42
+Remedy Entertainment,AA,Finland,709,5833.76,68.68,0,170.84,0.4
+Deep Silver,AA,Germany,736,5786.89,68.76,0,175.19,0.43
+505 Games,AA,Italy,727,5622.9,68.27,2,177.28,0.4
+InXile Entertainment,AA,USA,691,5562.13,68.33,1,195.64,0.41
+Devolver Digital,AA,USA,723,5506.03,68.68,1,185.6,0.43
+Double Fine,AA,USA,695,5482.88,68.49,1,180.62,0.42
+THQ Nordic,AA,Austria,702,5369.65,68.79,4,174.42,0.39
+Focus Entertainment,AA,France,744,5257.05,68.84,1,183.33,0.39
+Team17,AA,UK,730,5252.72,68.46,0,173.25,0.44
+Other,Indie,Various,387,1801.73,72.9,2,80.2,0.4
+Klei Entertainment,Indie,Canada,439,1743.72,73.31,1,79.24,0.37
+Supergiant Games,Indie,USA,416,1646.12,72.86,0,82.34,0.42
+tinyBuild,Indie,USA,403,1635.23,72.89,2,76.68,0.42
+Raw Fury,Indie,Sweden,400,1568.42,72.9,4,80.9,0.36
+Toby Fox,Indie,USA,392,1533.2,72.74,2,85.43,0.42
+Coffee Stain,Indie,Sweden,411,1503.66,73.1,1,75.03,0.4
+ConcernedApe,Indie,USA,415,1470.41,72.25,0,75.88,0.39
+Unknown Worlds,Indie,USA,390,1467.6,73.34,2,83.74,0.41
+Annapurna Interactive,Indie,USA,384,1430.99,72.26,2,73.82,0.42
+Ghost Ship Games,Indie,Denmark,396,1426.66,73.07,0,77.51,0.45
+Nomada Studio,Indie,Spain,394,1394.23,73.24,0,70.62,0.44
+Chucklefish,Indie,UK,365,1391.03,73.01,1,84.05,0.44
+Humble Games,Indie,USA,372,1340.1,73.28,3,73.2,0.4
+Motion Twin,Indie,France,365,1299.33,73.39,5,84.94,0.44

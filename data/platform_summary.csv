@@ -1,0 +1,34 @@
+platform,platform_type,platform_maker,titles,total_sales_m,avg_metacritic,avg_user_score,top_genre,avg_launch_price
+Atari 2600,Console,Atari,1607,37469.48,75.42,7.51,Action,59.75
+Browser,Browser,Various,2455,50344.2,73.9,7.4,Action,0.0
+Dreamcast,Console,Sega,498,10121.88,73.8,7.44,Action,59.51
+Game Boy,Handheld,Nintendo,2107,26967.0,74.2,7.4,Action,34.79
+Game Boy Advance,Handheld,Nintendo,1094,14926.51,73.05,7.34,Action,34.67
+Game Boy Color,Handheld,Nintendo,750,8836.35,73.15,7.33,Action,35.44
+GameCube,Console,Nintendo,796,16654.78,72.89,7.29,Action,59.7
+Mobile (Android),Mobile,Google,2483,177063.57,74.33,7.45,Action,2.27
+Mobile (iOS),Mobile,Apple,2622,178785.27,74.18,7.38,Action,2.23
+NES,Console,Nintendo,3045,66603.19,74.3,7.42,Action,60.14
+Nintendo 3DS,Handheld,Nintendo,1263,19422.52,74.17,7.43,Action,34.94
+Nintendo 64,Console,Nintendo,878,16735.18,73.35,7.32,Action,60.63
+Nintendo DS,Handheld,Nintendo,1260,16861.94,73.46,7.35,Action,34.64
+Nintendo Switch,Hybrid,Nintendo,1737,44288.28,74.51,7.47,Action,49.4
+Nintendo Switch 2,Hybrid,Nintendo,403,9829.56,74.17,7.4,Action,49.67
+PC,PC,Various,6305,116852.54,74.17,7.42,Action,32.62
+PSP,Handheld,Sony,1130,16122.62,73.84,7.41,Action,34.8
+PlayStation,Console,Sony,1727,34433.17,73.32,7.33,Action,59.82
+PlayStation 2,Console,Sony,1540,38513.96,73.47,7.34,Action,59.87
+PlayStation 3,Console,Sony,1305,34542.85,74.12,7.4,Action,60.43
+PlayStation 4,Console,Sony,1492,40019.94,74.12,7.36,Action,59.76
+PlayStation 5,Console,Sony,1223,37457.27,74.19,7.42,Action,59.83
+PlayStation Vita,Handheld,Sony,1101,17707.48,74.17,7.39,Action,34.9
+SNES,Console,Nintendo,1906,38823.04,74.08,7.42,Action,60.37
+Sega Genesis,Console,Sega,1555,33260.35,74.7,7.47,Action,59.91
+Sega Saturn,Console,Sega,724,14022.96,73.85,7.4,Action,60.28
+Stadia,Streaming,Google,795,18262.99,74.4,7.49,Action,8.24
+Wii,Console,Nintendo,887,20842.27,73.31,7.34,Action,60.1
+Wii U,Console,Nintendo,689,18171.11,73.99,7.39,Action,59.51
+Xbox,Console,Microsoft,991,23441.55,73.35,7.35,Action,59.45
+Xbox 360,Console,Microsoft,1289,35327.42,73.94,7.46,Action,59.72
+Xbox One,Console,Microsoft,1043,27808.72,74.44,7.51,Action,59.88
+Xbox Series X/S,Console,Microsoft,1300,41216.96,74.13,7.44,Action,59.84
