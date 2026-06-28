@@ -131,7 +131,7 @@ class GOTYModelV2(L.LightningModule):
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_auroc', self.auroc, on_epoch=True, prog_bar=True)
         self.log('val_f1', self.f1, on_epoch=True, prog_bar=True)
-
+        return loss
     def configure_optimizers(self):
         optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim,mode='min',factor=0.5,patience=5,min_lr=1e-6)
