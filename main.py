@@ -11,7 +11,7 @@ import config as cfg
 def carregar_dados():
 
     games = pd.read_csv("data/games.csv")
-    trends = pd.read_csv("data/trends.csv")
+    trends = pd.read_csv("data/yearly_trends.csv")
     return games, trends
 
 def main():
@@ -63,7 +63,7 @@ def main():
             accelerator="auto",
             devices=1,
             logger=fold_logger,
-            enable_checkpointing=False,
+            enable_checkpointing=True,
             enable_model_summary=True,
             enable_progress_bar=True
         )
