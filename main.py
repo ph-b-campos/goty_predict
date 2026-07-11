@@ -54,7 +54,7 @@ def main():
 
         fold_logger = CSVLogger(
             save_dir="logs", 
-            name="cv_resultados", 
+            name="cv_resultados_v2", 
             version=f"fold_{fold + 1}"
         )
         

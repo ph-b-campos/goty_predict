@@ -3,9 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as L
 import torchmetrics.classification as tm_class
+import config as cfg
 
 class Classificador(nn.Module):
-    def __init__(self,input_size ,n_neurons, n_hidden):
+    def __init__(self,input_size ,n_neurons = cfg.N_NEURONS, n_hidden = cfg.N_HIDDEN):
         super().__init__()
         self.n_neurons = n_neurons
         self.n_hidden = n_hidden
@@ -31,7 +32,7 @@ class Classificador(nn.Module):
         return out
 
 class ClassificadorV2(nn.Module):
-    def __init__(self,input_size ,n_neurons, n_hidden):
+    def __init__(self,input_size ,n_neurons = cfg.N_NEURONS, n_hidden = cfg.N_HIDDEN):
         super().__init__()
         self.n_neurons = n_neurons
         self.n_hidden = n_hidden
@@ -57,7 +58,7 @@ class ClassificadorV2(nn.Module):
         return out
 
 class GOTYModel(L.LightningModule):
-    def __init__(self, model, learning_rate=1e-3):
+    def __init__(self, model, learning_rate=cfg.LR):
         super().__init__()
         self.model = model
         self.learning_rate = learning_rate
@@ -96,7 +97,7 @@ class GOTYModel(L.LightningModule):
         return optim
 
 class GOTYModelV2(L.LightningModule):
-    def __init__(self, model, learning_rate=1e-3,pos_weight_val=19):
+    def __init__(self, model, learning_rate=cfg.LR,pos_weight_val=cfg.POS_WEIGHT_VAL):
         super().__init__()
         # Peso da classe positiva 
         self.register_buffer('pos_weight', torch.tensor([pos_weight_val]))
@@ -133,14 +134,20 @@ class GOTYModelV2(L.LightningModule):
         self.log('val_f1', self.f1, on_epoch=True, prog_bar=True)
         return loss
     def configure_optimizers(self):
-        optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate, weight_decay=1e-4)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optim,mode='min',factor=0.5,patience=5,min_lr=1e-6)
+        optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        t_max = cfg.MAX_EPOCHS  
+        
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optim, 
+            T_max=t_max, 
+            eta_min=1e-6
+        )
         
         return {
             "optimizer": optim,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "monitor": "val_loss", 
+                "interval": "epoch",
                 "frequency": 1
             }
         }
