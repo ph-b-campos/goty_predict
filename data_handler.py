@@ -186,3 +186,101 @@ class GOTYDataModule(L.LightningDataModule):
             shuffle=False, 
             num_workers=self.num_workers
         )
+import pandas as pd
+from sklearn.base import BaseEstimator, TransformerMixin
+
+class Genre_Feature_Eng(BaseEstimator, TransformerMixin):
+    def __init__(self, trends_df, genre_df):
+        self.trends_df = trends_df
+        self.genre_df = genre_df
+        self.stats = {}
+
+    def fit(self, X, y=None):
+        """
+        Aprende as distribuições (Média, Desvio e Contagens) usando APENAS
+        os dados de Treino para evitar Data Leakage nos Folds.
+        """
+        df = X.copy()
+
+        self.colunas_para_padronizar = [
+            'metacritic_score',
+            'user_score',
+            'launch_price_usd',
+            'how_long_to_beat_main_hrs',
+            'global_sales_million',
+            'estimated_revenue_million_usd',
+            'how_long_to_beat_completionist_hrs'
+        ]
+
+        # 1. Aprende a Bolha (Ano + Gênero)
+        bolha_stats = df.groupby(['year', 'genre']).agg(
+            qtd_jogos=('genre', 'count')
+        )
+
+        for col in self.colunas_para_padronizar:
+            bolha_stats[f'{col}_mean'] = df.groupby(['year', 'genre'])[col].mean()
+            bolha_stats[f'{col}_std'] = df.groupby(['year', 'genre'])[col].std()
+
+        self.stats['bolha_stats'] = bolha_stats.reset_index()
+
+        # 2. Estatísticas de Fallback (Caso o fold de validação tenha um ano/gênero inédito)
+        self.stats['global_means'] = df[self.colunas_para_padronizar].mean().to_dict()
+
+        return self
+
+    def transform(self, X):
+        """
+        Aplica as transformações baseadas nas estatísticas salvas no fit().
+        """
+        X_out = X.copy()
+
+        esrb_mapping = {'E': 1, 'E10+': 2, 'T': 3, 'M': 4, 'AO': 5, 'RP': 3}
+        X_out['esrb_rating_num'] = X_out['esrb_rating'].map(esrb_mapping).fillna(0)
+
+
+        # Trends
+        X_out = X_out.merge(self.trends_df[['year', 'pct_microtransactions', 'pct_online', 'pct_dlc']], on='year', how='left')
+        X_out['dev_microtransactions'] = X_out['microtransactions'] - X_out['pct_microtransactions']
+        X_out['dev_online'] = X_out['online_multiplayer'] - X_out['pct_online']
+        X_out['dev_dlc'] = X_out['dlc_released'] - X_out['pct_dlc']
+
+        # Gênero (Target Encoding)
+        X_out = X_out.merge(self.genre_df[['genre', 'pct_goty_nominated']], on='genre', how='left')
+
+        # Traz as estatísticas do treino para o DataFrame atual
+        X_out = X_out.merge(self.stats['bolha_stats'], on=['year', 'genre'], how='left')
+
+        # Índice de Escassez (1/N)
+        X_out['qtd_jogos'] = X_out['qtd_jogos'].fillna(1) # Fallback: Assume que o jogo é o único
+        X_out['genre_scarcity'] = 1.0 / X_out['qtd_jogos']
+
+        # Z-Scores
+        for col in self.colunas_para_padronizar:
+            col_mean = f'{col}_mean'
+            col_std = f'{col}_std'
+
+            # Proteção contra NaNs e Divisão por Zero
+            X_out[col_mean] = X_out[col_mean].fillna(self.stats['global_means'][col])
+            X_out[col_std] = X_out[col_std].fillna(1).replace(0, 1)
+
+            X_out[f'{col}_zscore_gy'] = (X_out[col] - X_out[col_mean]) / X_out[col_std]
+
+        colunas_vendas_regionais = ['na_sales_million', 'eu_sales_million', 'jp_sales_million', 'other_sales_million']
+        colunas_avaliacao = ['critic_review_count', 'user_review_count']
+
+        colunas_redundantes = (
+            colunas_vendas_regionais +
+            self.colunas_para_padronizar +
+            colunas_avaliacao +
+            ['esrb_rating', 'microtransactions', 'pct_microtransactions',
+             'online_multiplayer', 'pct_online', 'dlc_released', 'pct_dlc',
+             'genre', 'year', 'qtd_jogos']
+        )
+
+        # Garante a exclusão das colunas temporárias geradas pelo merge da bolha
+        for col in self.colunas_para_padronizar:
+            colunas_redundantes.extend([f'{col}_mean', f'{col}_std'])
+
+        X_out = X_out.drop(columns=[c for c in colunas_redundantes if c in X_out.columns], errors='ignore')
+
+        return X_out
