@@ -8,6 +8,8 @@ from models import Classificador, ClassificadorV2, ClassificadorV3, GOTYModel, G
 from data_handler import GOTYDataModule
 import config as cfg
 
+SAVE_DIR = f"logs/{cfg.SAMPLING_STRATEGY}"
+
 def carregar_dados():
 
     games = pd.read_csv("data/games.csv")
@@ -20,7 +22,7 @@ def main():
     X_baseline = games.drop(columns=cfg.COLUNAS_DROP, errors='ignore')
     y = games['goty_nominated']
 
-    os.makedirs("logs", exist_ok=True)
+    os.makedirs(SAVE_DIR, exist_ok=True)
 
     skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
 
@@ -35,7 +37,8 @@ def main():
             trends_df=trends,
             train_idx=train_idx,
             val_idx=val_idx,
-            batch_size=cfg.BATCH_SIZE
+            batch_size=cfg.BATCH_SIZE,
+            sampling_strategy=cfg.SAMPLING_STRATEGY
         )
 
         data_module.setup()
@@ -52,7 +55,7 @@ def main():
         )
 
         fold_logger = CSVLogger(
-            save_dir="logs", 
+            save_dir=SAVE_DIR, 
             name="cv_resultados", 
             version=f"fold_{fold + 1}"
         )
@@ -82,7 +85,7 @@ def main():
         )
 
         fold_logger_v2 = CSVLogger(
-            save_dir="logs", 
+            save_dir=SAVE_DIR, 
             name="cv_resultados_v2", 
             version=f"fold_{fold + 1}"
         )
@@ -112,7 +115,7 @@ def main():
         )
 
         fold_logger_v3 = CSVLogger(
-            save_dir="logs", 
+            save_dir=SAVE_DIR, 
             name="cv_resultados_v3", 
             version=f"fold_{fold + 1}"
         )
@@ -139,7 +142,7 @@ def main():
             pos_weight_val=cfg.POS_WEIGHT_VAL
         )
         fold_logger_v4 = CSVLogger(
-            save_dir="logs", 
+            save_dir=SAVE_DIR, 
             name="cv_resultados_v4", 
             version=f"fold_{fold + 1}"
         )
