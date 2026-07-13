@@ -288,7 +288,19 @@ class GOTYDataModule(L.LightningDataModule):
     DataModule para orquestrar datasets, preprocessamento e DataLoaders do GOTY.
     Projetado para receber índices de Cross-Validation (K-Fold).
     """
-    def __init__(self, X, y, trends_df, train_idx, val_idx, batch_size=32, num_workers=9):
+    def __init__(
+        self,
+        X,
+        y,
+        trends_df,
+        train_idx,
+        val_idx,
+        batch_size=32,
+        num_workers=9,
+        sampling_strategy=None,
+        target_positive_ratio=0.5,
+        sampling_random_state=42
+    ):
         super().__init__()
         # O reset_index garante que o fatiamento por .iloc nos folds funcione sem erros
         self.X = X.reset_index(drop=True)
@@ -298,6 +310,9 @@ class GOTYDataModule(L.LightningDataModule):
         self.val_idx = val_idx
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.sampling_strategy = sampling_strategy
+        self.target_positive_ratio = target_positive_ratio
+        self.sampling_random_state = sampling_random_state
         
         self.pipeline = Feature_Eng(trends_df=self.trends_df)
 
@@ -327,9 +342,63 @@ class GOTYDataModule(L.LightningDataModule):
         # Salva o input_size (número de colunas finais) para instanciar a rede neural depois
         self.input_size = X_train_tensor.shape[1]
 
+        self.train_class_counts_before_sampling = self._class_counts(y_train_tensor)
+        X_train_tensor, y_train_tensor = self._apply_train_sampling(X_train_tensor, y_train_tensor)
+        self.train_class_counts_after_sampling = self._class_counts(y_train_tensor)
+
         # 4. Empacotamento em Datasets
         self.train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
         self.val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
+
+    def _apply_train_sampling(self, X_train_tensor, y_train_tensor):
+        if self.sampling_strategy is None:
+            return X_train_tensor, y_train_tensor
+
+        if self.sampling_strategy == "upsample_positive":
+            return self._upsample_positive_class(X_train_tensor, y_train_tensor)
+
+        raise ValueError(f"Estrategia de sampling desconhecida: {self.sampling_strategy}")
+
+    def _upsample_positive_class(self, X_train_tensor, y_train_tensor):
+        if not 0 < self.target_positive_ratio < 1:
+            raise ValueError("target_positive_ratio deve estar entre 0 e 1.")
+
+        positive_indices = torch.where(y_train_tensor == 1)[0]
+        negative_indices = torch.where(y_train_tensor == 0)[0]
+
+        n_positive = len(positive_indices)
+        n_negative = len(negative_indices)
+
+        if n_positive == 0 or n_negative == 0:
+            return X_train_tensor, y_train_tensor
+
+        target_positive_count = int(np.ceil(
+            (self.target_positive_ratio * n_negative) / (1 - self.target_positive_ratio)
+        ))
+
+        if target_positive_count <= n_positive:
+            return X_train_tensor, y_train_tensor
+
+        n_extra = target_positive_count - n_positive
+        generator = torch.Generator().manual_seed(self.sampling_random_state)
+        sampled_positions = torch.randint(
+            low=0,
+            high=n_positive,
+            size=(n_extra,),
+            generator=generator
+        )
+        sampled_indices = positive_indices[sampled_positions]
+
+        X_resampled = torch.cat([X_train_tensor, X_train_tensor[sampled_indices]], dim=0)
+        y_resampled = torch.cat([y_train_tensor, y_train_tensor[sampled_indices]], dim=0)
+
+        return X_resampled, y_resampled
+
+    def _class_counts(self, y_tensor):
+        return {
+            "negative": int((y_tensor == 0).sum().item()),
+            "positive": int((y_tensor == 1).sum().item())
+        }
 
     def train_dataloader(self):
         return DataLoader(
