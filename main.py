@@ -4,7 +4,7 @@ from pytorch_lightning.loggers import CSVLogger
 from sklearn.model_selection import StratifiedKFold
 import os
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-from models import ClassificadorV3, GOTYModelV3
+from models import ClassificadorV5, GOTYModelV4
 from data_handler import GOTYDataModule
 import config as cfg
 
@@ -77,6 +77,6 @@ def main():
         )
 
         trainer.fit(l_model, datamodule=data_module)
-        
+
 if __name__ == "__main__":
     main()
