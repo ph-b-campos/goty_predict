@@ -9,8 +9,7 @@ BATCH_SIZE = 32
 MAX_EPOCHS = 50
 
 # Configurações de Dados
-COLUNAS_DROP = ['goty_nominated','goty_won','game_id','title',
+COLUNAS_DROP = ['goty_nominated','game_id','title',
     'platform', 'platform_type', 'platform_maker',
-    'platform_generation', 'genre', 'publisher',
-    'publisher_region', 'publisher_tier', 'developer'
+    'platform_generation', 'developer'
 ]

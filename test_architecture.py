@@ -2,6 +2,7 @@ import os
 os.makedirs("output", exist_ok=True)
 
 import pandas as pd
+import torch
 import pytorch_lightning as L
 from pytorch_lightning.loggers import CSVLogger
 from sklearn.model_selection import StratifiedKFold
@@ -11,6 +12,12 @@ import itertools
 from models import ClassificadorV2, GOTYModelV2
 from data_handler import GOTYDataModule
 import config as cfg
+
+ACCELERATOR = "gpu"
+DEVICES = 1
+SWEEP_BATCH_SIZE = 512
+SWEEP_EPOCHS = 30
+SEED = 42
 
 
 def carregar_dados():
@@ -28,6 +35,11 @@ def contar_parametros(model):
 
 
 def main():
+    if ACCELERATOR == "gpu" and not torch.cuda.is_available():
+        raise RuntimeError("GPU solicitada, mas torch.cuda.is_available() retornou False.")
+
+    L.seed_everything(SEED, workers=True)
+
     games, trends = carregar_dados()
 
     X_baseline = games.drop(columns=cfg.COLUNAS_DROP, errors="ignore")
@@ -46,17 +58,13 @@ def main():
         trends_df=trends,
         train_idx=train_idx,
         val_idx=val_idx,
-        batch_size=cfg.BATCH_SIZE,
+        batch_size=SWEEP_BATCH_SIZE,
     )
     data_module.setup()
 
     # Grade de busca: ajuste conforme necessário
     grid_n_hidden = [0, 1, 2, 3, 4]
     grid_n_neurons = [16, 32, 64, 128, 256]
-
-    # Número reduzido de épocas: suficiente para comparar arquiteturas,
-    # não para treinar o modelo final.
-    sweep_epochs = 30
 
     resultados = []
     combinacoes = list(itertools.product(grid_n_hidden, grid_n_neurons))
@@ -78,6 +86,7 @@ def main():
             model=modelo_base,
             learning_rate=cfg.LR,
             pos_weight_val=cfg.POS_WEIGHT_VAL,
+            scheduler_t_max=SWEEP_EPOCHS,
         )
 
         sweep_logger = CSVLogger(
@@ -87,9 +96,9 @@ def main():
         )
 
         trainer = L.Trainer(
-            max_epochs=sweep_epochs,
-            accelerator="auto",
-            devices=1,
+            max_epochs=SWEEP_EPOCHS,
+            accelerator=ACCELERATOR,
+            devices=DEVICES,
             logger=sweep_logger,
             enable_checkpointing=False,
             enable_model_summary=False,
@@ -122,5 +131,3 @@ def main():
 
 if __name__ == "__main__":
     df_resultados = main()
-
-

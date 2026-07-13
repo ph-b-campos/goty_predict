@@ -97,12 +97,13 @@ class GOTYModel(L.LightningModule):
         return optim
 
 class GOTYModelV2(L.LightningModule):
-    def __init__(self, model, learning_rate=cfg.LR,pos_weight_val=cfg.POS_WEIGHT_VAL):
+    def __init__(self, model, learning_rate=cfg.LR, pos_weight_val=cfg.POS_WEIGHT_VAL, scheduler_t_max=cfg.MAX_EPOCHS):
         super().__init__()
         # Peso da classe positiva 
         self.register_buffer('pos_weight', torch.tensor([pos_weight_val]))
         self.model = model
         self.learning_rate = learning_rate
+        self.scheduler_t_max = scheduler_t_max
         self.criterion = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
         self.auroc = tm_class.BinaryAUROC()
         self.f1 = tm_class.BinaryF1Score()
@@ -135,11 +136,10 @@ class GOTYModelV2(L.LightningModule):
         return loss
     def configure_optimizers(self):
         optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        t_max = cfg.MAX_EPOCHS  
         
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optim, 
-            T_max=t_max, 
+            T_max=self.scheduler_t_max,
             eta_min=1e-6
         )
         
