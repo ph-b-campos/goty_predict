@@ -298,7 +298,7 @@ class GOTYDataModule(L.LightningDataModule):
         batch_size=32,
         num_workers=9,
         sampling_strategy=None,
-        target_positive_ratio=0.5,
+        target_positive_ratio=0.2,
         sampling_random_state=42
     ):
         super().__init__()

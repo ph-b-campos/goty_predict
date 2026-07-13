@@ -2,7 +2,7 @@
 N_NEURONS = 32
 N_HIDDEN = 1
 LR = 1e-3
-POS_WEIGHT_VAL = 5.0
+POS_WEIGHT_VAL = 3.0
 TRESHOLD = 0.83
 
 # Configurações de Treinamento
@@ -16,4 +16,4 @@ COLUNAS_DROP = ['goty_nominated','game_id','title',
 ]
 
 #Sampling
-SAMPLING_STRATEGY = 'upsample_positive'
+SAMPLING_STRATEGY = 'downsample_negative'
