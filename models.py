@@ -352,4 +352,72 @@ class ClassificadorV5(nn.Module):
         out = self.hidden_layers(out)
         out = self.output_layer(out)
         return out
-    
+
+class GOTYModelV5(L.LightningModule):
+    def __init__(self, model, learning_rate=cfg.LR, pos_weight_val=cfg.POS_WEIGHT_VAL, threshold=cfg.TRESHOLD):
+        super().__init__()
+        self.register_buffer('pos_weight', torch.tensor([pos_weight_val], dtype=torch.float32))
+        self.model = model
+        self.learning_rate = learning_rate
+        self.threshold = threshold # Mudança V5: threshold fixo encontrado na iteração anterior
+        self.criterion = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
+
+        self.validation_probabilities = []
+        self.validation_targets = []
+
+    def forward(self, x):
+        return self.model(x)
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        y_pred = self.forward(x).squeeze(-1)
+        loss = self.criterion(y_pred, y.float())
+        self.log('train_loss', loss, on_step=False, on_epoch=True, batch_size=y.size(0))
+        return loss
+
+    def on_validation_epoch_start(self):
+        self.validation_probabilities.clear()
+        self.validation_targets.clear()
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        y_pred_logits = self.forward(x).squeeze(-1)
+        loss = self.criterion(y_pred_logits, y.float())
+        preds_prob = torch.sigmoid(y_pred_logits)
+
+        self.validation_probabilities.append(preds_prob.detach())
+        self.validation_targets.append(y.int().detach())
+
+        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=y.size(0))
+        return loss
+
+    def on_validation_epoch_end(self):
+        probabilities = torch.cat(self.validation_probabilities)
+        targets = torch.cat(self.validation_targets)
+
+        auroc = binary_auroc(probabilities, targets)
+        average_precision = binary_average_precision(probabilities, targets)
+
+        # Mudança V5: métricas calculadas com o threshold fixo de 0.83
+        predicted_classes = (probabilities >= self.threshold).int()
+
+        tp = ((predicted_classes == 1) & (targets == 1)).sum().float()
+        fp = ((predicted_classes == 1) & (targets == 0)).sum().float()
+        fn = ((predicted_classes == 0) & (targets == 1)).sum().float()
+
+        precision = tp / (tp + fp).clamp_min(1.0)
+        recall = tp / (tp + fn).clamp_min(1.0)
+        f1 = 2 * precision * recall / (precision + recall).clamp_min(1e-8)
+
+        # Mudança V5: removidas métricas secundárias e busca de threshold
+        self.log_dict({
+            'val_auroc': auroc,
+            'val_average_precision': average_precision,
+            'val_f1': f1,
+            'val_precision': precision,
+            'val_recall': recall
+        }, logger=True, prog_bar=True)
+
+    def configure_optimizers(self):
+        optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        return optim

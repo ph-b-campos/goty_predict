@@ -3,8 +3,8 @@ import pytorch_lightning as L
 from pytorch_lightning.loggers import CSVLogger
 from sklearn.model_selection import StratifiedKFold
 import os
-
-from models import Classificador, ClassificadorV2, ClassificadorV3, GOTYModel, GOTYModelV2, GOTYModelV3, GOTYModelV4
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from models import ClassificadorV5, ClassificadorV2, ClassificadorV3, GOTYModel, GOTYModelV2, GOTYModelV3, GOTYModelV5
 from data_handler import GOTYDataModule
 import config as cfg
 
@@ -40,120 +40,56 @@ def main():
 
         data_module.setup()
 
-        modelo_base = Classificador(
+        modelo_base = ClassificadorV5(
             input_size=data_module.input_size, 
-            n_neurons=3, 
-            n_hidden=32
+            n_neurons=cfg.N_NEURONS, 
+            n_hidden=2
         )
         
-        l_model= GOTYModel(
+        l_model = GOTYModelV5(
             model=modelo_base, 
-            learning_rate=cfg.LR 
+            learning_rate=cfg.LR,
+            pos_weight_val=cfg.POS_WEIGHT_VAL,
+            threshold=cfg.TRESHOLD
         )
 
         fold_logger = CSVLogger(
             save_dir="logs", 
-            name="cv_resultados", 
+            name="cv_resultados_v5", 
             version=f"fold_{fold + 1}"
+        )
+
+        early_stopping = EarlyStopping(
+            monitor='val_loss',
+            mode='max',
+            patience=7,
+            min_delta=0.0001,
+            verbose=True
+        )
+
+        checkpoint_callback = ModelCheckpoint(
+            dirpath=f"checkpoints/cv_resultados_5/fold_{fold + 1}",
+            monitor='val_loss',
+            mode='max',
+            save_top_k=1,
+            filename='best-{epoch:02d}-{val_loss:.4f}'
         )
         
         trainer = L.Trainer(
             max_epochs=cfg.MAX_EPOCHS,
             accelerator="auto",
             devices=1,
-            logger= fold_logger,
+            logger=fold_logger,
+            callbacks=[early_stopping, checkpoint_callback], # Mudança V5
             enable_checkpointing=True,
             enable_model_summary=True,
             enable_progress_bar=True
         )
 
         trainer.fit(l_model, datamodule=data_module)
-        # V2
-        modelo_v2 = ClassificadorV2(
-            input_size=data_module.input_size, 
-            n_neurons=3, 
-            n_hidden=32
-        )
-        
-        l_model_v2= GOTYModelV2(
-            model=modelo_v2, 
-            learning_rate=cfg.LR, 
-            pos_weight_val=20
-        )
 
-        fold_logger_v2 = CSVLogger(
-            save_dir="logs", 
-            name="cv_resultados_v2", 
-            version=f"fold_{fold + 1}"
-        )
-        
-        trainer_v2 = L.Trainer(
-            max_epochs=cfg.MAX_EPOCHS,
-            accelerator="auto",
-            devices=1,
-            logger= fold_logger_v2,
-            enable_checkpointing=True,
-            enable_model_summary=True,
-            enable_progress_bar=True
-        )
 
-        trainer_v2.fit(l_model_v2, datamodule=data_module)
-        # V3
-        modelo_v3 = ClassificadorV3(
-            input_size=data_module.input_size, 
-            n_neurons=cfg.N_NEURONS, 
-            n_hidden=cfg.N_HIDDEN
-        )
-        
-        l_model_v3= GOTYModelV3(
-            model=modelo_v3, 
-            learning_rate=cfg.LR, 
-            pos_weight_val=20
-        )
 
-        fold_logger_v3 = CSVLogger(
-            save_dir="logs", 
-            name="cv_resultados_v3", 
-            version=f"fold_{fold + 1}"
-        )
-        
-        trainer_v3 = L.Trainer(
-            max_epochs=cfg.MAX_EPOCHS,
-            accelerator="auto",
-            devices=1,
-            logger= fold_logger_v3,
-            enable_checkpointing=True,
-            enable_model_summary=True,
-            enable_progress_bar=True
-        )
-        trainer_v3.fit(l_model_v3, datamodule=data_module)
-        # V4
-        modelo_v4 = ClassificadorV3(
-            input_size=data_module.input_size, 
-            n_neurons=cfg.N_NEURONS, 
-            n_hidden=cfg.N_HIDDEN
-        )
-        l_model_v4 = GOTYModelV4(
-            model=modelo_v4,
-            learning_rate=cfg.LR,
-            pos_weight_val=cfg.POS_WEIGHT_VAL
-        )
-        fold_logger_v4 = CSVLogger(
-            save_dir="logs", 
-            name="cv_resultados_v4", 
-            version=f"fold_{fold + 1}"
-        )
-        trainer_v4 = L.Trainer(
-            max_epochs=cfg.MAX_EPOCHS,
-            accelerator="auto",
-            devices=1,
-            logger= fold_logger_v4,
-            enable_checkpointing=True,
-            enable_model_summary=True,
-            enable_progress_bar=True
-        )
-        trainer_v4.fit(l_model_v4, datamodule=data_module)
-        
 
 if __name__ == "__main__":
     main()
