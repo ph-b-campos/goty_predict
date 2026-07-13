@@ -4,7 +4,7 @@ from pytorch_lightning.loggers import CSVLogger
 from sklearn.model_selection import StratifiedKFold
 import os
 
-from models import ClassificadorV2, GOTYModelV2
+from models import Classificador, ClassificadorV2, ClassificadorV3, GOTYModel, GOTYModelV2, GOTYModelV3, GOTYModelV4
 from data_handler import GOTYDataModule
 import config as cfg
 
@@ -40,21 +40,20 @@ def main():
 
         data_module.setup()
 
-        modelo_base = ClassificadorV2(
+        modelo_base = Classificador(
             input_size=data_module.input_size, 
-            n_neurons=cfg.N_NEURONS, 
-            n_hidden=cfg.N_HIDDEN
+            n_neurons=3, 
+            n_hidden=32
         )
         
-        l_model = GOTYModelV2(
+        l_model= GOTYModel(
             model=modelo_base, 
-            learning_rate=cfg.LR, 
-            pos_weight_val=cfg.POS_WEIGHT_VAL
+            learning_rate=cfg.LR 
         )
 
         fold_logger = CSVLogger(
             save_dir="logs", 
-            name="cv_resultados_v2", 
+            name="cv_resultados", 
             version=f"fold_{fold + 1}"
         )
         
@@ -62,13 +61,99 @@ def main():
             max_epochs=cfg.MAX_EPOCHS,
             accelerator="auto",
             devices=1,
-            logger=fold_logger,
+            logger= fold_logger,
             enable_checkpointing=True,
             enable_model_summary=True,
             enable_progress_bar=True
         )
 
         trainer.fit(l_model, datamodule=data_module)
+        # V2
+        modelo_v2 = ClassificadorV2(
+            input_size=data_module.input_size, 
+            n_neurons=3, 
+            n_hidden=32
+        )
+        
+        l_model_v2= GOTYModelV2(
+            model=modelo_v2, 
+            learning_rate=cfg.LR, 
+            pos_weight_val=20
+        )
+
+        fold_logger_v2 = CSVLogger(
+            save_dir="logs", 
+            name="cv_resultados_v2", 
+            version=f"fold_{fold + 1}"
+        )
+        
+        trainer_v2 = L.Trainer(
+            max_epochs=cfg.MAX_EPOCHS,
+            accelerator="auto",
+            devices=1,
+            logger= fold_logger_v2,
+            enable_checkpointing=True,
+            enable_model_summary=True,
+            enable_progress_bar=True
+        )
+
+        trainer_v2.fit(l_model_v2, datamodule=data_module)
+        # V3
+        modelo_v3 = ClassificadorV3(
+            input_size=data_module.input_size, 
+            n_neurons=cfg.N_NEURONS, 
+            n_hidden=cfg.N_HIDDEN
+        )
+        
+        l_model_v3= GOTYModelV3(
+            model=modelo_v3, 
+            learning_rate=cfg.LR, 
+            pos_weight_val=20
+        )
+
+        fold_logger_v3 = CSVLogger(
+            save_dir="logs", 
+            name="cv_resultados_v3", 
+            version=f"fold_{fold + 1}"
+        )
+        
+        trainer_v3 = L.Trainer(
+            max_epochs=cfg.MAX_EPOCHS,
+            accelerator="auto",
+            devices=1,
+            logger= fold_logger_v3,
+            enable_checkpointing=True,
+            enable_model_summary=True,
+            enable_progress_bar=True
+        )
+        trainer_v3.fit(l_model_v3, datamodule=data_module)
+        # V4
+        modelo_v4 = ClassificadorV3(
+            input_size=data_module.input_size, 
+            n_neurons=cfg.N_NEURONS, 
+            n_hidden=cfg.N_HIDDEN
+        )
+        l_model_v4 = GOTYModelV4(
+            model=modelo_v4,
+            learning_rate=cfg.LR,
+            pos_weight_val=cfg.POS_WEIGHT_VAL
+        )
+        fold_logger_v4 = CSVLogger(
+            save_dir="logs", 
+            name="cv_resultados_v4", 
+            version=f"fold_{fold + 1}"
+        )
+        trainer_v4 = L.Trainer(
+            max_epochs=cfg.MAX_EPOCHS,
+            accelerator="auto",
+            devices=1,
+            logger= fold_logger_v4,
+            enable_checkpointing=True,
+            enable_model_summary=True,
+            enable_progress_bar=True
+        )
+        trainer_v4.fit(l_model_v4, datamodule=data_module)
+        
 
 if __name__ == "__main__":
     main()

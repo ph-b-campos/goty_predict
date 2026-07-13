@@ -1,11 +1,11 @@
 # Hiperparâmetros da Rede Neural
 N_NEURONS = 32
-N_HIDDEN = 3
+N_HIDDEN = 1
 LR = 1e-3
-POS_WEIGHT_VAL = 20.0
+POS_WEIGHT_VAL = 5.0
 
 # Configurações de Treinamento
-BATCH_SIZE = 32
+BATCH_SIZE = 256
 MAX_EPOCHS = 50
 
 # Configurações de Dados

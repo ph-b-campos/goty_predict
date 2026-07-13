@@ -77,3 +77,31 @@ def plotar_metricas_cv(df_stats):
     plt.tight_layout()
     plt.show()
 
+def imprimir_metricas_finais_v4(df_stats):
+    ultima = df_stats.iloc[-1]
+
+    print("="*65)
+    print("Relatório - 10 Folds")
+    print("="*65)
+
+    metricas = {
+        'val_auroc': 'AUROC',
+        'val_average_precision': 'Average Precision',
+        'val_f1_threshold_05': 'F1-Score (Threshold 0.5)',
+        'val_f1_optimized': 'F1-Score Otimizado',
+        'val_precision_optimized': 'Precision',
+        'val_recall_optimized': 'Recall',
+        'val_specificity_optimized': 'Specificity',
+        'val_accuracy_optimized': 'Accuracy',
+        'val_balanced_accuracy_optimized': 'Balanced Accuracy',
+        'val_best_threshold': 'Melhor Threshold'
+    }
+
+    for coluna, nome in metricas.items():
+        if f'{coluna}_mean' in df_stats.columns:
+            media = ultima[f'{coluna}_mean']
+            desvio = ultima[f'{coluna}_std']
+            print(f"{nome:<30}: {media:.4f} ± {desvio:.4f}")
+
+    print("="*65)
+

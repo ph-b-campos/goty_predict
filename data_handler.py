@@ -288,7 +288,7 @@ class GOTYDataModule(L.LightningDataModule):
     DataModule para orquestrar datasets, preprocessamento e DataLoaders do GOTY.
     Projetado para receber índices de Cross-Validation (K-Fold).
     """
-    def __init__(self, X, y, trends_df, train_idx, val_idx, batch_size=32, num_workers=0):
+    def __init__(self, X, y, trends_df, train_idx, val_idx, batch_size=32, num_workers=9):
         super().__init__()
         # O reset_index garante que o fatiamento por .iloc nos folds funcione sem erros
         self.X = X.reset_index(drop=True)
