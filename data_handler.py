@@ -357,12 +357,13 @@ class GOTYDataModule(L.LightningDataModule):
         if self.sampling_strategy == "upsample_positive":
             return self._upsample_positive_class(X_train_tensor, y_train_tensor)
 
+        if self.sampling_strategy == "downsample_negative":
+            return self._downsample_negative_class(X_train_tensor, y_train_tensor)
+
         raise ValueError(f"Estrategia de sampling desconhecida: {self.sampling_strategy}")
 
     def _upsample_positive_class(self, X_train_tensor, y_train_tensor):
-        if not 0 < self.target_positive_ratio < 1:
-            raise ValueError("target_positive_ratio deve estar entre 0 e 1.")
-
+        self._validate_target_positive_ratio()
         positive_indices = torch.where(y_train_tensor == 1)[0]
         negative_indices = torch.where(y_train_tensor == 0)[0]
 
@@ -393,6 +394,38 @@ class GOTYDataModule(L.LightningDataModule):
         y_resampled = torch.cat([y_train_tensor, y_train_tensor[sampled_indices]], dim=0)
 
         return X_resampled, y_resampled
+
+    def _downsample_negative_class(self, X_train_tensor, y_train_tensor):
+        self._validate_target_positive_ratio()
+        positive_indices = torch.where(y_train_tensor == 1)[0]
+        negative_indices = torch.where(y_train_tensor == 0)[0]
+
+        n_positive = len(positive_indices)
+        n_negative = len(negative_indices)
+
+        if n_positive == 0 or n_negative == 0:
+            return X_train_tensor, y_train_tensor
+
+        target_negative_count = int(np.ceil(
+            (n_positive * (1 - self.target_positive_ratio)) / self.target_positive_ratio
+        ))
+
+        if target_negative_count >= n_negative:
+            return X_train_tensor, y_train_tensor
+
+        generator = torch.Generator().manual_seed(self.sampling_random_state)
+        sampled_positions = torch.randperm(n_negative, generator=generator)[:target_negative_count]
+        sampled_negative_indices = negative_indices[sampled_positions]
+
+        selected_indices = torch.cat([positive_indices, sampled_negative_indices], dim=0)
+        shuffled_positions = torch.randperm(len(selected_indices), generator=generator)
+        selected_indices = selected_indices[shuffled_positions]
+
+        return X_train_tensor[selected_indices], y_train_tensor[selected_indices]
+
+    def _validate_target_positive_ratio(self):
+        if not 0 < self.target_positive_ratio < 1:
+            raise ValueError("target_positive_ratio deve estar entre 0 e 1.")
 
     def _class_counts(self, y_tensor):
         return {

@@ -6,7 +6,7 @@ POS_WEIGHT_VAL = 5.0
 TRESHOLD = 0.83
 
 # Configurações de Treinamento
-BATCH_SIZE = 512
+BATCH_SIZE = 4096
 MAX_EPOCHS = 50
 
 # Configurações de Dados
