@@ -4,12 +4,11 @@ from pytorch_lightning.loggers import CSVLogger
 from sklearn.model_selection import StratifiedKFold
 import os
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-from models import ClassificadorV5, ClassificadorV2, ClassificadorV3, GOTYModel, GOTYModelV2, GOTYModelV3, GOTYModelV5
+from models import ClassificadorV3, GOTYModelV3
 from data_handler import GOTYDataModule
 import config as cfg
 
 def carregar_dados():
-
     games = pd.read_csv("data/games.csv")
     trends = pd.read_csv("data/yearly_trends.csv")
     return games, trends
@@ -26,7 +25,7 @@ def main():
 
     for fold, (train_idx, val_idx) in enumerate(skf.split(X_baseline, y)):
         print(f"\n{'='*40}")
-        print(f"🚀 INICIANDO FOLD {fold + 1}/10")
+        print(f" INICIANDO FOLD {fold + 1}/10")
         print(f"{'='*40}")
 
         data_module = GOTYDataModule(
@@ -42,15 +41,13 @@ def main():
 
         modelo_base = ClassificadorV5(
             input_size=data_module.input_size, 
-            n_neurons=cfg.N_NEURONS, 
-            n_hidden=2
+            n_neurons=cfg.N_NEURONS, n_hidden=cfg.N_HIDDEN, dropout_rate=0.5
         )
-        
-        l_model = GOTYModelV5(
+
+        l_model = GOTYModelV4(
             model=modelo_base, 
             learning_rate=cfg.LR,
-            pos_weight_val=cfg.POS_WEIGHT_VAL,
-            threshold=cfg.TRESHOLD
+            pos_weight_val=5
         )
 
         fold_logger = CSVLogger(
@@ -59,37 +56,27 @@ def main():
             version=f"fold_{fold + 1}"
         )
 
+        # Mudança V5: interrompe após 7 validações sem redução relevante da val_loss
         early_stopping = EarlyStopping(
             monitor='val_loss',
-            mode='max',
+            mode='min',
             patience=7,
             min_delta=0.0001,
             verbose=True
         )
 
-        checkpoint_callback = ModelCheckpoint(
-            dirpath=f"checkpoints/cv_resultados_5/fold_{fold + 1}",
-            monitor='val_loss',
-            mode='max',
-            save_top_k=1,
-            filename='best-{epoch:02d}-{val_loss:.4f}'
-        )
-        
         trainer = L.Trainer(
             max_epochs=cfg.MAX_EPOCHS,
             accelerator="auto",
             devices=1,
             logger=fold_logger,
-            callbacks=[early_stopping, checkpoint_callback], # Mudança V5
+            callbacks=[early_stopping], # Mudança V5: adicionando early stopping
             enable_checkpointing=True,
             enable_model_summary=True,
             enable_progress_bar=True
         )
 
         trainer.fit(l_model, datamodule=data_module)
-
-
-
-
+        
 if __name__ == "__main__":
     main()

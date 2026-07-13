@@ -3,7 +3,6 @@ N_NEURONS = 32
 N_HIDDEN = 1
 LR = 1e-3
 POS_WEIGHT_VAL = 5.0
-TRESHOLD = 0.83
 
 # Configurações de Treinamento
 BATCH_SIZE = 256

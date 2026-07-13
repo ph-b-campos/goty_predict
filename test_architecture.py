@@ -9,7 +9,7 @@ from sklearn.model_selection import StratifiedKFold
 import os
 import itertools
 
-from models import ClassificadorV2, GOTYModelV2
+from models import ClassificadorV2, ClassificadorV3, GOTYModelV2, GOTYModelV3
 from data_handler import GOTYDataModule
 import config as cfg
 
@@ -74,15 +74,16 @@ def main():
         print(f"🔍 SWEEP {i}/{len(combinacoes)} | n_hidden={n_hidden} | n_neurons={n_neurons}")
         print(f"{'='*50}")
 
-        modelo_base = ClassificadorV2(
+        modelo_base = ClassificadorV3(
             input_size=data_module.input_size,
             n_neurons=n_neurons,
             n_hidden=n_hidden,
+            dropout_rate=0.5
         )
 
         total_params, trainable_params = contar_parametros(modelo_base)
 
-        l_model = GOTYModelV2(
+        l_model = GOTYModelV3(
             model=modelo_base,
             learning_rate=cfg.LR,
             pos_weight_val=cfg.POS_WEIGHT_VAL,

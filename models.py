@@ -65,9 +65,9 @@ class GOTYModel(L.LightningModule):
         self.auroc(y_pred, y)
         self.f1(y_pred, y)
 
-        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
-        self.log('val_auroc', self.auroc, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
-        self.log('val_f1', self.f1, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=y.size(0))
+        self.log('val_auroc', self.auroc, on_epoch=True, prog_bar=True, batch_size=y.size(0))
+        self.log('val_f1', self.f1, on_epoch=True, prog_bar=True, batch_size=y.size(0))
         return loss
 
     def configure_optimizers(self):
@@ -78,7 +78,7 @@ class GOTYModel(L.LightningModule):
 # Adicionando o peso da classe positiva na função de perda para lidar com o desbalanceamento de classes
 #############################################################################################
 class ClassificadorV2(nn.Module):
-    def __init__(self,input_size ,n_neurons = cfg.N_NEURONS, n_hidden = cfg.N_HIDDEN, dropout_rate=0.5):
+    def __init__(self,input_size ,n_neurons = cfg.N_NEURONS, n_hidden = cfg.N_HIDDEN):
         super().__init__()
         self.n_neurons = n_neurons
         self.n_hidden = n_hidden
@@ -104,13 +104,12 @@ class ClassificadorV2(nn.Module):
         return out
     
 class GOTYModelV2(L.LightningModule):
-    def __init__(self, model, learning_rate=cfg.LR, pos_weight_val=cfg.POS_WEIGHT_VAL, scheduler_t_max=cfg.MAX_EPOCHS):
+    def __init__(self, model, learning_rate=cfg.LR, pos_weight_val=cfg.POS_WEIGHT_VAL):
         super().__init__()
         # Peso da classe positiva 
         self.register_buffer('pos_weight', torch.tensor([pos_weight_val]))
         self.model = model
         self.learning_rate = learning_rate
-        self.scheduler_t_max = scheduler_t_max
         self.criterion = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
         self.auroc = tm_class.BinaryAUROC()
         self.f1 = tm_class.BinaryF1Score()
@@ -137,9 +136,9 @@ class GOTYModelV2(L.LightningModule):
         self.auroc(preds_prob, y)
         self.f1(preds_prob, y)
         
-        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
-        self.log('val_auroc', self.auroc, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
-        self.log('val_f1', self.f1, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=y.size(0))
+        self.log('val_auroc', self.auroc, on_epoch=True, prog_bar=True, batch_size=y.size(0))
+        self.log('val_f1', self.f1, on_epoch=True, prog_bar=True, batch_size=y.size(0))
         return loss
     def configure_optimizers(self):
         optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
@@ -180,13 +179,12 @@ class ClassificadorV3(nn.Module):
 
 
 class GOTYModelV3(L.LightningModule):
-    def __init__(self, model, learning_rate=cfg.LR, pos_weight_val=cfg.POS_WEIGHT_VAL, scheduler_t_max=cfg.MAX_EPOCHS):
+    def __init__(self, model, learning_rate=cfg.LR, pos_weight_val=cfg.POS_WEIGHT_VAL):
         super().__init__()
         # Peso da classe positiva 
         self.register_buffer('pos_weight', torch.tensor([pos_weight_val]))
         self.model = model
         self.learning_rate = learning_rate
-        self.scheduler_t_max = scheduler_t_max
         self.criterion = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
         self.auroc = tm_class.BinaryAUROC()
         self.f1 = tm_class.BinaryF1Score()
@@ -213,9 +211,9 @@ class GOTYModelV3(L.LightningModule):
         self.auroc(preds_prob, y)
         self.f1(preds_prob, y)
         
-        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
-        self.log('val_auroc', self.auroc, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
-        self.log('val_f1', self.f1, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=y.size(0))
+        self.log('val_auroc', self.auroc, on_epoch=True, prog_bar=True, batch_size=y.size(0))
+        self.log('val_f1', self.f1, on_epoch=True, prog_bar=True, batch_size=y.size(0))
         return loss
          
     def configure_optimizers(self):
@@ -224,8 +222,69 @@ class GOTYModelV3(L.LightningModule):
     
 #############################################################################################
 # --------------------Quarta Iteração do modelo------------------------------
-# Ajustando o threshold com base no F1 de validação e adicionando novas métricas
+# Usando taxa pos otima e batchnorm
 #############################################################################################
+class ClassificadorV4(nn.Module):
+    def __init__(self, input_size, n_neurons=cfg.N_NEURONS, n_hidden=cfg.N_HIDDEN, dropout_rate=0.5):
+        super().__init__()
+        self.n_neurons = n_neurons
+        self.n_hidden = n_hidden
+        self.dropout_rate = dropout_rate
+
+        self.first_layer = self.dense_layer(input_size, n_neurons)
+
+        hidden_layers_list = [self.dense_layer(n_neurons, n_neurons) for _ in range(n_hidden)]
+        self.hidden_layers = nn.Sequential(*hidden_layers_list)
+
+        self.output_layer = nn.Linear(n_neurons, 1)
+
+    def dense_layer(self, n_input, n_output):
+        layer = nn.Sequential(
+            nn.Linear(n_input, n_output),
+            nn.BatchNorm1d(n_output),
+            nn.ReLU(),
+            nn.Dropout(p=self.dropout_rate) 
+        )
+        return layer
+
+    def forward(self, x):
+        out = self.first_layer(x)
+        out = self.hidden_layers(out)
+        out = self.output_layer(out)
+        return out
+#############################################################################################
+# --------------------Quinta Iteração do modelo------------------------------
+# Aumentando a complexidade do modelo, adicionando mais camadas e neurônios, e ajustando o peso da classe positiva
+#############################################################################################
+class ClassificadorV5(nn.Module):
+    def __init__(self, input_size, n_neurons=cfg.N_NEURONS, n_hidden=cfg.N_HIDDEN, dropout_rate=0.5):
+        super().__init__()
+        self.n_neurons = n_neurons
+        self.n_hidden = n_hidden
+        self.dropout_rate = dropout_rate
+
+        self.first_layer = self.dense_layer(input_size, n_neurons)
+
+        hidden_layers_list = [self.dense_layer(n_neurons, n_neurons) for _ in range(n_hidden)]
+        self.hidden_layers = nn.Sequential(*hidden_layers_list)
+
+        self.output_layer = nn.Linear(n_neurons, 1)
+
+    def dense_layer(self, n_input, n_output):
+        layer = nn.Sequential(
+            nn.Linear(n_input, n_output),
+            nn.BatchNorm1d(n_output),
+            nn.GELU(), # substituindo ReLU por GELU
+            nn.Dropout(p=self.dropout_rate)
+            
+        )
+        return layer
+
+    def forward(self, x):
+        out = self.first_layer(x)
+        out = self.hidden_layers(out)
+        out = self.output_layer(out)
+        return out
 
 class GOTYModelV4(L.LightningModule):
     def __init__(self, model, learning_rate=cfg.LR, pos_weight_val=cfg.POS_WEIGHT_VAL):
@@ -247,7 +306,7 @@ class GOTYModelV4(L.LightningModule):
         x, y = batch
         y_pred = self.forward(x).squeeze(-1)
         loss = self.criterion(y_pred, y.float())
-        self.log('train_loss', loss, on_step=False, on_epoch=True, batch_size=cfg.BATCH_SIZE)
+        self.log('train_loss', loss, on_step=False, on_epoch=True, batch_size=y.size(0))
         return loss
 
     def on_validation_epoch_start(self):
@@ -265,7 +324,7 @@ class GOTYModelV4(L.LightningModule):
         self.validation_probabilities.append(preds_prob.detach())
         self.validation_targets.append(y.int().detach())
 
-        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=cfg.BATCH_SIZE)
+        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=y.size(0))
         return loss
 
     def on_validation_epoch_end(self):
@@ -316,108 +375,8 @@ class GOTYModelV4(L.LightningModule):
             'val_false_positives': fp,
             'val_false_negatives': fn
         }, logger=True)
-
+        
     def configure_optimizers(self):
-        optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        return optim
-#############################################################################################
-# --------------------Quinta Iteração do modelo------------------------------
-# Aumentando a complexidade do modelo, adicionando mais camadas e neurônios, e ajustando o peso da classe positiva
-#############################################################################################
-class ClassificadorV5(nn.Module):
-    def __init__(self, input_size, n_neurons=cfg.N_NEURONS, n_hidden=cfg.N_HIDDEN, dropout_rate=0.5):
-        super().__init__()
-        self.n_neurons = n_neurons
-        self.n_hidden = n_hidden
-        self.dropout_rate = dropout_rate
-
-        self.first_layer = self.dense_layer(input_size, n_neurons)
-
-        hidden_layers_list = [self.dense_layer(n_neurons, n_neurons) for _ in range(n_hidden)]
-        self.hidden_layers = nn.Sequential(*hidden_layers_list)
-
-        self.output_layer = nn.Linear(n_neurons, 1)
-
-    def dense_layer(self, n_input, n_output):
-        layer = nn.Sequential(
-            nn.Linear(n_input, n_output),
-            nn.BatchNorm1d(n_output),
-            nn.Dropout(p=self.dropout_rate),
-            nn.GELU() # substituindo ReLU por GELU
-        )
-        return layer
-
-    def forward(self, x):
-        out = self.first_layer(x)
-        out = self.hidden_layers(out)
-        out = self.output_layer(out)
-        return out
-
-class GOTYModelV5(L.LightningModule):
-    def __init__(self, model, learning_rate=cfg.LR, pos_weight_val=cfg.POS_WEIGHT_VAL, threshold=cfg.TRESHOLD):
-        super().__init__()
-        self.register_buffer('pos_weight', torch.tensor([pos_weight_val], dtype=torch.float32))
-        self.model = model
-        self.learning_rate = learning_rate
-        self.threshold = threshold # Mudança V5: threshold fixo encontrado na iteração anterior
-        self.criterion = nn.BCEWithLogitsLoss(pos_weight=self.pos_weight)
-
-        self.validation_probabilities = []
-        self.validation_targets = []
-
-    def forward(self, x):
-        return self.model(x)
-
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_pred = self.forward(x).squeeze(-1)
-        loss = self.criterion(y_pred, y.float())
-        self.log('train_loss', loss, on_step=False, on_epoch=True, batch_size=y.size(0))
-        return loss
-
-    def on_validation_epoch_start(self):
-        self.validation_probabilities.clear()
-        self.validation_targets.clear()
-
-    def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_pred_logits = self.forward(x).squeeze(-1)
-        loss = self.criterion(y_pred_logits, y.float())
-        preds_prob = torch.sigmoid(y_pred_logits)
-
-        self.validation_probabilities.append(preds_prob.detach())
-        self.validation_targets.append(y.int().detach())
-
-        self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True, batch_size=y.size(0))
-        return loss
-
-    def on_validation_epoch_end(self):
-        probabilities = torch.cat(self.validation_probabilities)
-        targets = torch.cat(self.validation_targets)
-
-        auroc = binary_auroc(probabilities, targets)
-        average_precision = binary_average_precision(probabilities, targets)
-
-        # Mudança V5: métricas calculadas com o threshold fixo de 0.83
-        predicted_classes = (probabilities >= self.threshold).int()
-
-        tp = ((predicted_classes == 1) & (targets == 1)).sum().float()
-        fp = ((predicted_classes == 1) & (targets == 0)).sum().float()
-        fn = ((predicted_classes == 0) & (targets == 1)).sum().float()
-
-        precision = tp / (tp + fp).clamp_min(1.0)
-        recall = tp / (tp + fn).clamp_min(1.0)
-        f1 = 2 * precision * recall / (precision + recall).clamp_min(1e-8)
-
-        # Mudança V5: removidas métricas secundárias e busca de threshold
-        self.log_dict({
-            'val_auroc': auroc,
-            'val_average_precision': average_precision,
-            'val_f1': f1,
-            'val_precision': precision,
-            'val_recall': recall
-        }, logger=True, prog_bar=True)
-
-    def configure_optimizers(self):
-        optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        return optim
+            optim = torch.optim.Adam(self.model.parameters(), lr=self.learning_rate)
+            return optim
+    
