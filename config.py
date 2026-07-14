@@ -2,7 +2,7 @@
 N_NEURONS = 32
 N_HIDDEN = 1
 LR = 1e-3
-POS_WEIGHT_VAL = 5.0
+POS_WEIGHT_VAL = 1.0
 
 # Configurações de Treinamento
 BATCH_SIZE = 256
@@ -13,3 +13,6 @@ COLUNAS_DROP = ['goty_nominated','game_id','title',
     'platform', 'platform_type', 'platform_maker',
     'platform_generation', 'developer'
 ]
+
+#Sampling
+SAMPLING_STRATEGY = 'upsample_positive'  # Opções: 'downsample_negative', 'upsample_positive', None
