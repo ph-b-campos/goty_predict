@@ -7,7 +7,9 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from models import ClassificadorV4, ClassificadorV5, GOTYModelV3, GOTYModelV4
 from data_handler import GOTYDataModule
 import config as cfg
-RUN_NAME = "cv_resultados_v5_final"
+
+SAVE_DIR = f"logs/{cfg.SAMPLING_STRATEGY}"
+
 def carregar_dados():
     games = pd.read_csv("data/games.csv")
     trends = pd.read_csv("data/yearly_trends.csv")
@@ -34,7 +36,8 @@ def main():
             trends_df=trends,
             train_idx=train_idx,
             val_idx=val_idx,
-            batch_size=cfg.BATCH_SIZE
+            batch_size=cfg.BATCH_SIZE,
+            sampling_strategy=cfg.SAMPLING_STRATEGY
         )
 
         data_module.setup()
@@ -49,12 +52,12 @@ def main():
         l_model = GOTYModelV4(
             model=modelo_base,
             learning_rate=cfg.LR,
-            pos_weight_val=5
+            pos_weight_val=cfg.POS_WEIGHT_VAL
         )
 
         fold_logger = CSVLogger(
-            save_dir="logs",
-            name=RUN_NAME,
+            save_dir=SAVE_DIR, 
+            name="cv_resultados_v5", 
             version=f"fold_{fold + 1}"
         )
 
@@ -80,7 +83,7 @@ def main():
         trainer = L.Trainer(
             max_epochs=cfg.MAX_EPOCHS,
             accelerator="auto",
-            devices=1,
+            devices=-1,
             logger=fold_logger,
             callbacks=[early_stopping, checkpoint_callback],
             enable_checkpointing=True,
