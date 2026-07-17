@@ -321,32 +321,27 @@ class GOTYDataModule(L.LightningDataModule):
         Executado em cada GPU/Máquina (se houver paralelismo).
         Faz o split, o fit_transform no treino, e o transform na validação.
         """
-        # 1. Separação dos dados do fold atual
         X_train = self.X.iloc[self.train_idx]
         y_train = self.y.iloc[self.train_idx]
         
         X_val = self.X.iloc[self.val_idx]
         y_val = self.y.iloc[self.val_idx]
 
-        # 2. Prevenção de Data Leakage
         X_train_proc = self.pipeline.fit_transform(X_train, y_train)
         X_val_proc = self.pipeline.transform(X_val)
 
-        # 3. Conversão para Tensores PyTorch
         X_train_tensor = torch.tensor(X_train_proc.values, dtype=torch.float32)
         y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32)
         
         X_val_tensor = torch.tensor(X_val_proc.values, dtype=torch.float32)
         y_val_tensor = torch.tensor(y_val.values, dtype=torch.float32)
 
-        # Salva o input_size (número de colunas finais) para instanciar a rede neural depois
         self.input_size = X_train_tensor.shape[1]
 
         self.train_class_counts_before_sampling = self._class_counts(y_train_tensor)
         X_train_tensor, y_train_tensor = self._apply_train_sampling(X_train_tensor, y_train_tensor)
         self.train_class_counts_after_sampling = self._class_counts(y_train_tensor)
 
-        # 4. Empacotamento em Datasets
         self.train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
         self.val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
 

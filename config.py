@@ -15,4 +15,4 @@ COLUNAS_DROP = ['goty_nominated','game_id','title',
 ]
 
 #Sampling
-SAMPLING_STRATEGY = 'upsample_positive'  # Opções: 'downsample_negative', 'upsample_positive', None
+SAMPLING_STRATEGY = 'downsample_negative'  # Opções: 'downsample_negative', 'upsample_positive', None

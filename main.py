@@ -83,7 +83,7 @@ def main():
         trainer = L.Trainer(
             max_epochs=cfg.MAX_EPOCHS,
             accelerator="auto",
-            devices=-1,
+            devices="auto",
             logger=fold_logger,
             callbacks=[early_stopping, checkpoint_callback],
             enable_checkpointing=True,
